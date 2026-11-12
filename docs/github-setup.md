@@ -36,3 +36,5 @@ Verify write access for imoooooooon, jarifff, mugdhoo44, and sajedulislam5840 wi
 ## Review evidence
 
 After applying settings, record actual PR/run links, remote branch heads, protection readback, milestone dates, and collaborator verification here. Local command success alone is not evidence that CI or GitHub protections have been enabled.
+
+Remote push verification: `staging` points to the original baseline `11ee6d5`; the setup branch was pushed with commit `3b8bfc5` and subsequent verification notes. `main` remains on its original baseline. A separate clean clone passed the local checks. The setup PR has not been created; use the GitHub comparison from `emon/setup-team-workflow` into `staging` once API or browser account access is available, then obtain another teammate's review. Do not merge directly into main.
