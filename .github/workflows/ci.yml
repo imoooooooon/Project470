@@ -1,0 +1,74 @@
+name: CI
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release-source:
+    name: release-source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require same-repository staging for releases
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$EVENT" = pull_request ] && [ "$BASE" = main ]; then
+            test "$HEAD" = staging && test "$HEAD_REPO" = "$REPO"
+          fi
+  checks:
+    name: checks
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          # Disposable CI credentials; never use these for a real environment.
+          MARIADB_ROOT_PASSWORD: ci-root-only
+          MARIADB_DATABASE: krishi_bondhu_test
+          MARIADB_USER: krishi_test
+          MARIADB_PASSWORD: ci-test-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mariadb
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: krishi_bondhu_test
+      DB_USERNAME: krishi_test
+      DB_PASSWORD: ci-test-only
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_mysql, dom, xml, curl, zip
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer check-platform-reqs
+      - name: Prepare isolated test configuration
+        run: |
+          cp .env.testing.example .env.testing
+          php artisan key:generate --env=testing
+      - run: php vendor/bin/pint --test
+      - run: php artisan about --only=environment
+      - run: php scripts/check-database.php
+      - run: php artisan test
