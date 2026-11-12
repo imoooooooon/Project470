@@ -1,2 +1,0 @@
-@extends('layouts.app')
-@section('content')<div class="card p-4 mx-auto my-4" style="max-width:520px"><h1 class="h3">লগ ইন</h1><form method="post" action="{{ route('login') }}">@csrf<label for="email">ইমেইল</label><input class="form-control" id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required><label for="password">পাসওয়ার্ড</label><input class="form-control" id="password" type="password" name="password" autocomplete="current-password" required><button class="btn btn-success mt-4 w-100">লগ ইন</button></form></div>@endsection
